@@ -1,4 +1,4 @@
-import { Component } from "react";
+import { useEffect, useState } from "react";
 import { Searchbar } from "./Searchbar/Searchbar";
 import { ImageGalleryItem } from './ImageGalleryItem/ImageGalleryItem';
 import { ImageGallery } from './ImageGallery/ImageGallery';
@@ -7,88 +7,89 @@ import { Button } from "./Button/Button";
 import { getSearchImage } from "api/getSearchImage";
 import { Loader } from "./Loader/Loader";
 import { Modal } from "./Modal/Modal";
-
-export class App extends Component {
-  state = {   
-    images: [],
-    findText:'',
-    totalHits: 0,
-    page: 1,
-    imageURL:'',
-    isLoading: false,
-    openModal: false,
-    error:'',
-  };
-  hendlerSavedData = event => {
-    this.setState({
-      findText: event,      
-    });
-
-  };
-  componentDidUpdate(prevPropps, prevState) {
-    if (prevState.findText !== this.state.findText || prevState.page !== this.state.page) {
-      this.setState({isLoading:true,})
-      getSearchImage(this.state.findText, this.state.page).then(
-        ( data ) => {           
-          if (this.state.page === 1) {
-            this.setState({
-              images: [...data.hits],
-              totalHits: data.totalHits,
-            })            
-            return;
-           }
-          this.setState((prevState) => ({
-            images: [...prevState.images, ...data.hits],
-            totalHits:data.totalHits,
-          }))
-        }
-      ).catch((error) => {
-        this.setState({error})
-      })
-        .finally(() => { this.setState({ isLoading: false }) })
+export const App = () => {
+  const [images, setImages] = useState([]);
+  const [findText, setFindText] = useState('');
+  const [totalHits, setTotalHits] = useState(0);
+  const [page, setPage] = useState(1);
+  const [imageURL, setImageURL] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [openModal, setOpenModal] = useState(false);
+  const [error, setError] = useState('');
+  useEffect(() => {
+    if (error !== '') {
+      console.log(error);
     }
-  }
-  hendlerPageIncrement = () => {
-    this.setState((prev) => ({
-      page: prev.page + 1,
-    }))
-  }
-  hendlerClickImage = (event) => {
-    event.preventDefault()    
-    this.setState({ imageURL: event.target.attributes[3].value, openModal: true, });
-    window.addEventListener('keydown',this.hendlerCloseModalEsc)
-  }
-  hendlerCloseModalEsc = (event) => {
+  },[error])
+  useEffect(() => {    
+    if (findText !== ''){
+    setIsLoading(true);
+    getSearchImage(findText, page)
+      .then(data => {
+        if (page === 1) {
+          setImages([]);
+          setImages([...data.hits]);
+          setTotalHits(data.totalHits);
+          return;
+        }
+        setImages(prev => [...prev, ...data.hits]);
+        })
+        .catch(error => {
+          setError({ error });
+        })
+        .finally(() => {
+          setIsLoading(false);
+        })
+    }
+  }, [findText,page])
+  
+
+  const hendlerSavedData = event => {   
+    setFindText(event)
+    setPage(1)
+    setError('')
+  };
+  const hendlerPageIncrement = () => {    
+    setPage((prev) => prev + 1);
+  };
+  const hendlerClickImage = event => {
+    event.preventDefault();
+    setImageURL(event.target.attributes[3].value);
+    setOpenModal(true);    
+    window.addEventListener('keydown', hendlerCloseModalEsc);
+  };
+  const hendlerCloseModalEsc = event => {
     if (event.key === 'Escape') {
-      this.setState({ openModal: false })
-      window.removeEventListener('keydown', this.hendlerCloseModalEsc)
+      setOpenModal(false);
+      window.removeEventListener('keydown', hendlerCloseModalEsc);
       return;
     }
   };
-  hendlerCloseModalClick = (event) => {    
+  const hendlerCloseModalClick = event => {
     if (event.target.className === 'Overlay') {
-      this.setState({openModal:false})
+      setOpenModal(false);
     }
-  }
-  render() {
-    return (
-      <div className="app">
-        <Searchbar saved={this.hendlerSavedData} />
-        {this.state.openModal && (
-          <Modal imageURL={this.state.imageURL} closeModal={ this.hendlerCloseModalClick} />
+  };
+  return (
+    <div className="app">
+      <Searchbar saved={hendlerSavedData} />
+      {openModal && (
+        <Modal
+          imageURL={imageURL}
+          closeModal={hendlerCloseModalClick}
+        />
+      )}
+      <Loader isLoading={isLoading} />
+      <ImageGallery>
+        <ImageGalleryItem
+          data={images}
+          onClick={hendlerClickImage}
+        />
+      </ImageGallery>
+      {totalHits !== 0 &&
+        totalHits - page * 12 > 0 && (
+          <Button click={hendlerPageIncrement} />
         )}
-        <Loader isLoading={this.state.isLoading} />
-        <ImageGallery>
-          <ImageGalleryItem
-            data={this.state.images}
-            onClick={this.hendlerClickImage}
-          />
-        </ImageGallery>
-        {this.state.totalHits !== 0 &&
-          this.state.totalHits - this.state.page * 12 > 0 && (
-            <Button click={this.hendlerPageIncrement} />
-          )}
-      </div>
-    );
-  }
+    </div>
+  );
 }

@@ -1,4 +1,4 @@
-export const ImageGalleryItem = ({data, onClick}) => {    
+export const ImageGalleryItem = ({ data, onClick }) => {  
     return (
       <>
         {data.map(image => (

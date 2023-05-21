@@ -1,48 +1,36 @@
-import { Component } from "react";
+import { useState } from "react";
 
+export const Searchbar = ({saved}) => {
+  const [findtext, setFindtext] = useState('');
 
-
-export class Searchbar extends Component {
-  state = {
-    findtext: '',    
-    // articles: [],    
+  const hendlerChange = ({ target: { value } }) => {
+    setFindtext(value);
   };
-  hendlerChange = ({ target: { value } }) => {   
-    this.setState({
-      findtext: value,
-    }); 
-    
-           
-  };
-  hendlerSubmit = (e) => {
+  const hendlerSubmit = e => {
     e.preventDefault();
-    if (this.state.findtext.trim() === '') {
+    if (findtext.trim() === '') {
       return;
     }
-    this.props.saved(this.state.findtext.trim().replace(' ','+'))
-    this.setState({findtext:''})
+    saved(findtext.trim().replace(' ', '+'));
+    setFindtext('')
   };
+  return (
+    <header className="searchbar">
+      <form className="searchForm" onSubmit={hendlerSubmit}>
+        <button type="submit" className="searchForm-button">
+          <span className="searchForm-button-label">Search</span>
+        </button>
 
-    
-  render() {
-    return (
-      <header className="searchbar">
-        <form className="searchForm" onSubmit={this.hendlerSubmit}>
-          <button type="submit" className="searchForm-button">
-            <span className="searchForm-button-label">Search</span>
-          </button>
-
-          <input
-            className="searchForm-input"
-            type="text"
-            autoComplete="off"
-            autoFocus
-            placeholder="Search images and photos"
-            onChange={this.hendlerChange}
-            value={this.state.findtext}
-          />
-        </form>
-      </header>
-    );
-  }
+        <input
+          className="searchForm-input"
+          type="text"
+          autoComplete="off"
+          autoFocus
+          placeholder="Search images and photos"
+          onChange={hendlerChange}
+          value={findtext}
+        />
+      </form>
+    </header>
+  );
 }
